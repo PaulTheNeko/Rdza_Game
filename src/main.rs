@@ -30,8 +30,9 @@ fn main() {
     'main: loop {
             // Reakcja na event'y
         for event in event_pump.poll_iter() {
+            use sdl2::event::Event; /* By mieć event w scope */
             match event {
-                sdl2::event::Event::Quit {..} => break 'main,
+                Event::Quit {..} => break 'main,
                 _ => {},
             }
         }
