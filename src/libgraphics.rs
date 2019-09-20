@@ -5,7 +5,7 @@ extern crate gfx_backend_vulkan as backend;
 extern crate gfx_backend_metal as backend;
 
 
-    /* Używany jako "main", musi odebrać Reference do stanu gry który ma wyświetlić */
+/* Używany jako "main", musi odebrać Reference do stanu gry który ma wyświetlić */
 pub fn render() {
 
 }
