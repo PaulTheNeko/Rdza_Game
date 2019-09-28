@@ -7,12 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gfx-hal = "0.3.1"
+wgpu = {version = "0.3.0", features = ["vulkan"]}
+winit = "0.20.0-alpha3"
+raw-window-handle = "0.1"
 
-# Backend na normalne systemy
-[target.'cfg(not(target_os = "macos"))'.dependencies]
-gfx-backend-vulkan = "0.3.3"
-
-#backend na macos
-[target.'cfg(target_os = "macos")'.dependencies]
-gfx-backend-metal = "0.3.3"
+[build-dependencies]
+glsl-to-spirv = "0.1.5"
