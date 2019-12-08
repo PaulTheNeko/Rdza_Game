@@ -1,5 +1,3 @@
-
-
 use crate::components::*;
 
 use specs::prelude::*;

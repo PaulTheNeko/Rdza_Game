@@ -1,4 +1,3 @@
-use specs::prelude::*;
 use specs::{Component, VecStorage};
 
 #[derive(Component)]
