@@ -1,11 +1,11 @@
-mod systems;
 mod components;
-use crate::systems::*;
+mod systems;
 use crate::components::*;
+use crate::systems::*;
 
+use cgmath;
 use ggez;
 use specs::prelude::*;
-use cgmath;
 
 fn main() {
    // Świat dla specs, zawiera byty
@@ -14,39 +14,36 @@ fn main() {
    world.register::<Velocity>();
 
    // Taki byt dla testów
-   let ball = world.create_entity()
+   let _ball = world
+      .create_entity()
       .with(Position { x: 4.0, y: 7.0 })
       .with(Velocity { x: 1.0, y: 0.0 })
       .build();
 
    // Dispatcher, takie coś do włączania systemów
    // Aktualnie używany tylko do logiki gry
-   let mut dispatcher = DispatcherBuilder::new()
+   let dispatcher = DispatcherBuilder::new()
       .with(UpdatePos, "update_pos", &[])
       .build();
 
    // Stan świata dla ggez
-   let state = &mut State { 
-      world: world,
-      dispatcher: dispatcher,
-   };
+   let state = &mut State { world, dispatcher };
 
    // Ustawienia okna.
    // Wszystko podstawowe, tylko żeby rozmiar można było zmieniać
    let c = ggez::conf::Conf {
-      window_mode: ggez::conf::WindowMode::default()
-                                    .resizable(true),
+      window_mode: ggez::conf::WindowMode::default().resizable(true),
       window_setup: ggez::conf::WindowSetup::default(),
       backend: ggez::conf::Backend::default(),
       modules: ggez::conf::ModuleConf::default(),
    };
 
    // Context dla ggez, okno i eventloop
-   let (ref mut ctx, ref mut event_loop) = ggez::ContextBuilder::new("hello_ggez", "Paweł_Nowiński")
-    .conf(c)
-    .build()
-    .unwrap();
-   
+   let (ref mut ctx, ref mut event_loop) =
+      ggez::ContextBuilder::new("hello_ggez", "Paweł_Nowiński")
+         .conf(c)
+         .build()
+         .unwrap();
    ggez::event::run(ctx, event_loop, state).unwrap();
 }
 
@@ -58,14 +55,13 @@ struct State {
 
 // Kod do reagowania na event'y od ggez
 impl ggez::event::EventHandler for State {
-
    // Kod do logiki gry
    // Nie trzeba zmieniać
-   fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+   fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
       self.dispatcher.dispatch(&self.world); // Włącza systemy
       self.world.maintain(); // Potrzebne
       Ok(())
-  }
+   }
 
    // Renderowanie i wyświetlanie
    // Może być do tego później potrzebny drugi dispatcher
@@ -75,23 +71,21 @@ impl ggez::event::EventHandler for State {
       let clr: graphics::Color = (0.0, 0.0, 0.0).into(); // czarny
       graphics::clear(ctx, clr); // Czyści ekran
       let pos = self.world.read_storage::<Position>();
-      
       for p in pos.join() {
-         let circle = graphics::Mesh::new_circle (
+         let circle = graphics::Mesh::new_circle(
             ctx,
             graphics::DrawMode::Fill(graphics::FillOptions::default()),
             cgmath::Point2::new(p.x, p.y),
             400.0,
             1.0,
-            (1.0, 1.0, 1.0).into()
+            (1.0, 1.0, 1.0).into(),
          )?; // kółko
 
          graphics::draw(ctx, &circle, graphics::DrawParam::default())?;
       }
 
-      
       let output = graphics::present(ctx); // Wyświetla wyrenderowany obraz
       std::thread::yield_now(); // Daje systemowi odetchnąć
       output // czy wyświetlenie się powiodło
-  }
+   }
 }
