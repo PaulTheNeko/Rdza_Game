@@ -70,7 +70,28 @@ impl ggez::event::EventHandler for State {
    // Renderowanie i wyświetlanie
    // Może być do tego później potrzebny drugi dispatcher
    fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+      use ggez::graphics;
       PrintSystem.run_now(&self.world); // Wyświetla w terminalu pozycje obiektów
-      Ok(()) // Context dla ggez, okno i eventloop
+      let clr: graphics::Color = (0.0, 0.0, 0.0).into(); // czarny
+      graphics::clear(ctx, clr); // Czyści ekran
+      let pos = self.world.read_storage::<Position>();
+      
+      for p in pos.join() {
+         let circle = graphics::Mesh::new_circle (
+            ctx,
+            graphics::DrawMode::Fill(graphics::FillOptions::default()),
+            cgmath::Point2::new(p.x, p.y),
+            400.0,
+            1.0,
+            (1.0, 1.0, 1.0).into()
+         )?; // kółko
+
+         graphics::draw(ctx, &circle, graphics::DrawParam::default())?;
+      }
+
+      
+      let output = graphics::present(ctx); // Wyświetla wyrenderowany obraz
+      std::thread::yield_now(); // Daje systemowi odetchnąć
+      output // czy wyświetlenie się powiodło
   }
 }
