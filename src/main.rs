@@ -1,7 +1,10 @@
+mod systems;
+mod components;
+use crate::systems::*;
+use crate::components::*;
 
 use ggez;
 use specs::prelude::*;
-use specs::{Component, VecStorage};
 
 fn main() {
    let mut world = World::new();
@@ -23,7 +26,7 @@ fn main() {
    };
 
    let c = ggez::conf::Conf::new();
-   let (ref mut ctx, ref mut event_loop) = ggez::ContextBuilder::new("hello_ggez", "awesome_person")
+   let (ref mut ctx, ref mut event_loop) = ggez::ContextBuilder::new("hello_ggez", "Paweł_Nowiński")
     .conf(c)
     .build()
     .unwrap();
@@ -46,45 +49,4 @@ impl ggez::event::EventHandler for State{
       PrintSystem.run_now(&self.world);
       Ok(())
   }
-}
-
-
-#[derive(Component)]
-#[storage(VecStorage)]
-struct Position {
-   x: f32,
-   y: f32,
-}
-
-#[derive(Component)]
-#[storage(VecStorage)]
-struct Velocity {
-   x: f32,
-   y: f32,
-}
-
-struct UpdatePos;
-
-impl<'a> System<'a> for UpdatePos {
-   type SystemData = (ReadStorage<'a, Velocity>,
-                      WriteStorage<'a, Position>);
-    
-   fn run(&mut self, (vel, mut pos): Self::SystemData) {
-      for (vel,pos) in (&vel, &mut pos).join() {
-         pos.x += vel.x;
-         pos.y += vel.y;
-      }
-   }
-}
-
-struct PrintSystem;
-
-impl<'a> System<'a> for PrintSystem {
-   type SystemData = (ReadStorage<'a, Position>);
-
-   fn run(&mut self, pos: Self::SystemData) {
-      for pos in (&pos).join() {
-         println!("x:{} y:{}", pos.x, pos.y)
-      }
-   }
 }
