@@ -88,3 +88,8 @@
 
 #/target
 #**/*.rs.bk
+
+
+# Przechowuję tu stary main.rs dla swojej informacji
+#       -Paweł Nowiński
+src/oldmain.rs
