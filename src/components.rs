@@ -1,5 +1,14 @@
 use specs::{Component, VecStorage};
 
+// Resource
+#[derive(Default)]
+pub struct PInput {
+   pub up: bool,
+   pub down: bool,
+   pub right: bool,
+   pub left: bool,
+}
+
 #[derive(Component)]
 #[storage(VecStorage)]
 pub struct Position {

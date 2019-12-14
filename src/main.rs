@@ -8,13 +8,21 @@ use ggez;
 use specs::prelude::*;
 
 fn main() {
+   let PInput = PInput {
+      up: false,
+      down: false,
+      right: false,
+      left: false,
+   };
+
    // Świat dla specs, zawiera byty
    let mut world = World::new();
+   world.insert(PInput);
    world.register::<Position>();
    world.register::<Velocity>();
 
    // Taki byt dla testów
-   let _ball = world
+   let _example = world
       .create_entity()
       .with(Position { x: 4.0, y: 7.0 })
       .with(Velocity { x: 1.0, y: 0.0 })
@@ -24,6 +32,7 @@ fn main() {
    // Aktualnie używany tylko do logiki gry
    let dispatcher = DispatcherBuilder::new()
       .with(UpdatePos, "update_pos", &[])
+      .with(PInputAddVel, "playerinput_add_velocity", &[])
       .build();
 
    // Stan świata dla ggez
@@ -70,22 +79,68 @@ impl ggez::event::EventHandler for State {
       PrintSystem.run_now(&self.world); // Wyświetla w terminalu pozycje obiektów
       let clr: graphics::Color = (0.0, 0.0, 0.0).into(); // czarny
       graphics::clear(ctx, clr); // Czyści ekran
+
+      let path = std::path::Path::new("/example.png");
+      let mut img = graphics::Image::new(ctx, path)?;
+      img.set_filter(graphics::FilterMode::Nearest);
       let pos = self.world.read_storage::<Position>();
       for p in pos.join() {
-         let circle = graphics::Mesh::new_circle(
+/*          let circle = graphics::Mesh::new_circle(
             ctx,
             graphics::DrawMode::Fill(graphics::FillOptions::default()),
             cgmath::Point2::new(p.x, p.y),
             400.0,
             1.0,
             (1.0, 1.0, 1.0).into(),
-         )?; // kółko
+         )?; // kółko */
 
-         graphics::draw(ctx, &circle, graphics::DrawParam::default())?;
+
+
+         graphics::draw(ctx, 
+         &img, 
+         graphics::DrawParam::new()
+            .dest(cgmath::Point2::new(p.x, p.y))
+            .scale(cgmath::Vector2::new(10.0, 10.0)))?;
       }
 
-      let output = graphics::present(ctx); // Wyświetla wyrenderowany obraz
+      graphics::present(ctx)?;
       std::thread::yield_now(); // Daje systemowi odetchnąć
-      output // czy wyświetlenie się powiodło
+      Ok(()) // Jakby był błąd to funkcja by spanikowała
+   }
+
+   fn resize_event(&mut self, ctx: &mut ggez::Context, width: f32, height: f32) -> () {
+      use ggez::graphics;
+      let coord = graphics::Rect::new(0.0, 0.0, width, height);
+      let _ = graphics::set_screen_coordinates(ctx, coord);
+      ()
+   }
+
+
+   fn key_down_event(&mut self, ctx: &mut ggez::Context, keycode: ggez::event::KeyCode, _keymods: ggez::event::KeyMods, _repeat: bool) {
+      use ggez::event::KeyCode;
+      let pinput = &mut self.world.write_resource::<PInput>();
+
+      match keycode {
+         KeyCode::W => pinput.up = true,
+         KeyCode::S => pinput.down = true,
+         KeyCode::A => pinput.left = true,
+         KeyCode::D => pinput.right = true,
+         _ => (),
+      }
+
+   }
+
+   fn key_up_event(&mut self, ctx: &mut ggez::Context, keycode: ggez::event::KeyCode, _keymods: ggez::event::KeyMods) {
+      use ggez::event::KeyCode;
+      let pinput = &mut self.world.write_resource::<PInput>();
+
+      match keycode {
+         KeyCode::W => pinput.up = false,
+         KeyCode::S => pinput.down = false,
+         KeyCode::A => pinput.left = false,
+         KeyCode::D => pinput.right = false,
+         _ => (),
+      }
+
    }
 }
