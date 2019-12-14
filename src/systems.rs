@@ -24,18 +24,18 @@ impl<'a> System<'a> for PInputAddVel {
     fn run(&mut self, data: Self::SystemData) {
         use cgmath::Vector2;
         let (pinput, mut vel) = data;
-        let mut AddVel = Vector2::new(0.0, 0.0);
+        let mut addvel = Vector2::new(0.0, 0.0);
 
         // Słabe
         // Sumuje kierunki
-        if pinput.up {AddVel = Vector2::new(0.0, -0.1)};
-        if pinput.down {AddVel = Vector2::new(0.0, 0.1)};
-        if pinput.left {AddVel = Vector2::new(-0.1, 0.0)};
-        if pinput.right {AddVel = Vector2::new(0.1, 0.0)};
+        if pinput.up {addvel = addvel + Vector2::new(0.0, -0.1)};
+        if pinput.down {addvel = addvel + Vector2::new(0.0, 0.1)};
+        if pinput.left {addvel = addvel + Vector2::new(-0.1, 0.0)};
+        if pinput.right {addvel = addvel + Vector2::new(0.1, 0.0)};
 
         for mut vel in (&mut vel).join() {
-            vel.x = vel.x + AddVel.x;
-            vel.y = vel.y + AddVel.y;
+            vel.x = vel.x + addvel.x;
+            vel.y = vel.y + addvel.y;
         }
     }
 }
