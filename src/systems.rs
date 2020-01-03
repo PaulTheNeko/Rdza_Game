@@ -1,6 +1,6 @@
 use crate::components::*;
-use specs::prelude::*;
 use cgmath;
+use specs::prelude::*;
 
 pub struct UpdatePos;
 
@@ -18,8 +18,7 @@ impl<'a> System<'a> for UpdatePos {
 pub struct PInputAddVel;
 
 impl<'a> System<'a> for PInputAddVel {
-    type SystemData = (Read<'a, PInput>,
-                        WriteStorage<'a, Velocity>);
+    type SystemData = (Read<'a, PInput>, WriteStorage<'a, Velocity>);
 
     fn run(&mut self, data: Self::SystemData) {
         use cgmath::Vector2;
@@ -28,10 +27,18 @@ impl<'a> System<'a> for PInputAddVel {
 
         // Słabe
         // Sumuje kierunki
-        if pinput.up {addvel = addvel + Vector2::new(0.0, -0.1)};
-        if pinput.down {addvel = addvel + Vector2::new(0.0, 0.1)};
-        if pinput.left {addvel = addvel + Vector2::new(-0.1, 0.0)};
-        if pinput.right {addvel = addvel + Vector2::new(0.1, 0.0)};
+        if pinput.up {
+            addvel = addvel + Vector2::new(0.0, -0.1)
+        };
+        if pinput.down {
+            addvel = addvel + Vector2::new(0.0, 0.1)
+        };
+        if pinput.left {
+            addvel = addvel + Vector2::new(-0.1, 0.0)
+        };
+        if pinput.right {
+            addvel = addvel + Vector2::new(0.1, 0.0)
+        };
 
         for mut vel in (&mut vel).join() {
             vel.x = vel.x + addvel.x;
