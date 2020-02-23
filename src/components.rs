@@ -1,30 +1,27 @@
-use specs::{Component, VecStorage};
+//use specs::{Component, VecStorage};
 
 // Resource
-#[derive(Default)]
-pub struct PInput {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct PlayerInput {
    pub up: bool,
    pub down: bool,
    pub right: bool,
    pub left: bool,
 }
 
-#[derive(Component)]
-#[storage(VecStorage)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Position {
    pub x: f32,
    pub y: f32,
 }
 
-#[derive(Component)]
-#[storage(VecStorage)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Velocity {
    pub x: f32,
    pub y: f32,
 }
 
-#[derive(Component)]
-#[storage(VecStorage)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Sprite {
    pub img: String,
 }

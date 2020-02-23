@@ -8,7 +8,8 @@ edition = "2018"
 
 [dependencies]
 ggez = "0.5.1"
-specs = { version = "0.15.1", features = ["specs-derive"] }
+# specs = { version = "0.15.1", features = ["specs-derive"] }
+legion = "0.2.1"
 
 [dependencies.cgmath]
 version = "0.17.0"

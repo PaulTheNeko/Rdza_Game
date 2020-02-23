@@ -1,43 +1,70 @@
 mod components;
-mod systems;
 use crate::components::*;
-use crate::systems::*;
 
 use std::collections::HashMap;
 
 use cgmath;
 use ggez;
-use specs::prelude::*;
+// use specs::prelude::*;
+use legion::prelude::*;
 
 fn main() {
-   let PInput = PInput {
+   let playerinput = PlayerInput {
       up: false,
       down: false,
       right: false,
       left: false,
    };
 
-   // Świat dla specs, zawiera byty
-   let mut world = World::new();
-   world.insert(PInput);
-   world.register::<Position>();
-   world.register::<Velocity>();
-   world.register::<Sprite>();
+   // Świat dla Legion, zawiera byty
+   let universe = Universe::new();
+   let mut world = universe.create_world();
 
-   // Taki byt dla testów
-   let _example = world
-      .create_entity()
-      .with(Position { x: 4.0, y: 7.0 })
-      .with(Velocity { x: 1.0, y: 0.0 })
-      .with(Sprite { img: "example".to_string() })
-      .build();
+   let mut resources = Resources::default();
+   resources.insert(playerinput);
 
-   // Dispatcher, takie coś do włączania systemów
-   // Aktualnie używany tylko do logiki gry
-   let dispatcher = DispatcherBuilder::new()
-      .with(UpdatePos, "update_pos", &[])
-      .with(PInputAddVel, "playerinput_add_velocity", &[])
-      .build();
+   world.resources = resources;
+
+   // Byt dla testów
+   world.insert(
+      (),
+      vec![
+         (Position{x: 0.0, y:0.0}, Velocity{ x: 0.1, y:0.2}, Sprite{ img:"example".to_string()})
+         ]
+   );
+
+   // -- Systemy --
+   let mut systems = Vec::new();
+   systems.push( SystemBuilder::<()>::new("update_positions")
+         .with_query(<(Write<Position>, Read<Velocity>)>::query())
+         .build(|_, mut world, _ /*resources*/, queries| {
+            for (mut pos, vel) in queries.iter(&mut *world) {
+               pos.x += vel.x;
+               pos.y += vel.y;
+            }
+         })
+   );
+
+
+   systems.push(SystemBuilder::<()>::new("add_velocty_from_playerinput")
+         .read_resource::<PlayerInput>()
+         .with_query(<(Write<Position>, Read<Velocity>)>::query())
+         .build(|_, mut world, res1, queries| {
+            for (mut pos, vel) in queries.iter(&mut *world) {
+               pos.x += vel.x;
+               pos.y += vel.y;
+            }
+         })
+   );
+
+   // Schedule
+   //
+   // Nie mogę dynamicznie zbudować bo jest move
+   let mut schedule = Schedule::builder();
+   for i in systems {
+      schedule = schedule.add_system(i);
+   }
+   let schedule = schedule.build();
 
    // Ustawienia okna.
    // Wszystko podstawowe, tylko żeby rozmiar można było zmieniać
@@ -67,7 +94,7 @@ fn main() {
    let state = &mut State {
       world,
       textures,
-      dispatcher,
+      schedule,
    };
 
    // Pętla
@@ -78,7 +105,8 @@ fn main() {
 struct State {
    world: World,
    textures: HashMap<String, ggez::graphics::Image>,
-   dispatcher: Dispatcher<'static, 'static>,
+   // dispatcher: Dispatcher<'static, 'static>,
+   schedule: Schedule,
 }
 
 // Kod do reagowania na event'y od ggez
@@ -86,8 +114,7 @@ impl ggez::event::EventHandler for State {
    // Kod do logiki gry
    // Nie trzeba zmieniać
    fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
-      self.dispatcher.dispatch(&self.world); // Włącza systemy
-      self.world.maintain(); // Potrzebne
+      self.schedule.execute(&mut self.world); // Włącza systemy
       Ok(())
    }
 
@@ -95,13 +122,11 @@ impl ggez::event::EventHandler for State {
    // Może być do tego później potrzebny drugi dispatcher
    fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
       use ggez::graphics;
-      PrintSystem.run_now(&self.world); // Wyświetla w terminalu pozycje obiektów
       let clr: graphics::Color = (0.0, 0.0, 0.0).into(); // czarny
       graphics::clear(ctx, clr); // Czyści ekran
 
-      let pos = self.world.read_storage::<Position>(); // Pozycja
-      let sprite = self.world.read_storage::<Sprite>(); // Id tekstury
-      for (p, img) in (&pos, &sprite).join() {
+      let query = <(Read<Position>, Read<Sprite>)>::query();
+      for (p, img) in query.iter(&mut self.world) {
          let img = self.textures.get(&img.img).unwrap(); // Wyciąga teksturę z HashMap
 
          graphics::draw(
@@ -114,7 +139,7 @@ impl ggez::event::EventHandler for State {
       }
 
       graphics::present(ctx)?;
-      std::thread::yield_now(); // Daje systemowi odetchnąć
+      std::thread::yield_now(); // Daje systemowi (OS) odetchnąć
       Ok(()) // Jakby był błąd to funkcja by spanikowała
    }
 
@@ -133,31 +158,31 @@ impl ggez::event::EventHandler for State {
       _repeat: bool,
    ) {
       use ggez::event::KeyCode;
-      let pinput = &mut self.world.write_resource::<PInput>();
+      let mut playerinput = self.world.resources.get_mut::<PlayerInput>().unwrap();
 
       match keycode {
-         KeyCode::W => pinput.up = true,
-         KeyCode::S => pinput.down = true,
-         KeyCode::A => pinput.left = true,
-         KeyCode::D => pinput.right = true,
+         KeyCode::W => playerinput.up = true,
+         KeyCode::S => playerinput.down = true,
+         KeyCode::A => playerinput.left = true,
+         KeyCode::D => playerinput.right = true,
          _ => (),
       }
    }
 
    fn key_up_event(
       &mut self,
-      ctx: &mut ggez::Context,
+      _ctx: &mut ggez::Context,
       keycode: ggez::event::KeyCode,
       _keymods: ggez::event::KeyMods,
    ) {
       use ggez::event::KeyCode;
-      let pinput = &mut self.world.write_resource::<PInput>();
+      let mut playerinput = &mut self.world.resources.get_mut::<PlayerInput>().unwrap();
 
       match keycode {
-         KeyCode::W => pinput.up = false,
-         KeyCode::S => pinput.down = false,
-         KeyCode::A => pinput.left = false,
-         KeyCode::D => pinput.right = false,
+         KeyCode::W => playerinput.up = false,
+         KeyCode::S => playerinput.down = false,
+         KeyCode::A => playerinput.left = false,
+         KeyCode::D => playerinput.right = false,
          _ => (),
       }
    }
