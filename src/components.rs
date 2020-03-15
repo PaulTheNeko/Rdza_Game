@@ -5,8 +5,8 @@
 pub struct PlayerInput {
    pub up: bool,
    pub down: bool,
-   pub right: bool,
    pub left: bool,
+   pub right: bool,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]

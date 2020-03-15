@@ -46,13 +46,15 @@ fn main() {
    );
 
 
-   systems.push(SystemBuilder::<()>::new("add_velocty_from_playerinput")
+   systems.push(SystemBuilder::<()>::new("add_velocity_from_playerinput")
          .read_resource::<PlayerInput>()
-         .with_query(<(Write<Position>, Read<Velocity>)>::query())
+         .with_query(<(Write<Velocity>)>::query())
          .build(|_, mut world, res1, queries| {
-            for (mut pos, vel) in queries.iter(&mut *world) {
-               pos.x += vel.x;
-               pos.y += vel.y;
+            for (mut vel) in queries.iter(&mut *world) {
+               if res1.up {vel.y = vel.y - 0.1};
+               if res1.down {vel.y = vel.y + 0.1};
+               if res1.left {vel.x = vel.x - 0.1};
+               if res1.right {vel.x = vel.x + 0.1};
             }
          })
    );
@@ -167,6 +169,7 @@ impl ggez::event::EventHandler for State {
          KeyCode::D => playerinput.right = true,
          _ => (),
       }
+      
    }
 
    fn key_up_event(
