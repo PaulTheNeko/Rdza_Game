@@ -3,7 +3,7 @@ use crate::components::*;
 
 use std::collections::HashMap;
 
-use cgmath;
+use cgmath::prelude::*;
 use ggez;
 // use specs::prelude::*;
 use legion::prelude::*;
@@ -16,52 +16,67 @@ fn main() {
       left: false,
    };
 
+   let camerpos = CamPos((0.0, 0.0).into());
+
    // Świat dla Legion, zawiera byty
    let universe = Universe::new();
    let mut world = universe.create_world();
 
    let mut resources = Resources::default();
    resources.insert(playerinput);
+   resources.insert(camerpos);
 
    world.resources = resources;
 
    // Byt dla testów
    world.insert(
-      (),
-      vec![
-         (Position{x: 0.0, y:0.0}, Velocity{ x: 0.1, y:0.2}, Sprite{ img:"example".to_string()})
-         ]
+      (Player,),
+      vec![(
+         Position((0.0, 0.0).into()),
+         Velocity((0.1, 0.2).into()),
+         Sprite {
+            img: "example".to_string(),
+         },
+      )],
    );
 
    // -- Systemy --
    let mut systems = Vec::new();
-   systems.push( SystemBuilder::<()>::new("update_positions")
+   systems.push(
+      SystemBuilder::<()>::new("update_positions")
          .with_query(<(Write<Position>, Read<Velocity>)>::query())
-         .build(|_, mut world, _ /*resources*/, queries| {
+         .build(|_, world, _ /*resources*/, queries| {
             for (mut pos, vel) in queries.iter(&mut *world) {
-               pos.x += vel.x;
-               pos.y += vel.y;
+               pos.0.x += vel.0.x;
+               pos.0.y += vel.0.y;
+               println!("x:{} y:{} vx:{} vy{}", pos.0.x, pos.0.y, vel.0.x, vel.0.y)
             }
-         })
+         }),
    );
 
-
-   systems.push(SystemBuilder::<()>::new("add_velocity_from_playerinput")
+   systems.push(
+      SystemBuilder::<()>::new("add_velocity_from_playerinput")
          .read_resource::<PlayerInput>()
-         .with_query(<(Write<Velocity>)>::query())
-         .build(|_, mut world, res1, queries| {
-            for (mut vel) in queries.iter(&mut *world) {
-               if res1.up {vel.y = vel.y - 0.1};
-               if res1.down {vel.y = vel.y + 0.1};
-               if res1.left {vel.x = vel.x - 0.1};
-               if res1.right {vel.x = vel.x + 0.1};
+         .with_query(<Write<Velocity>>::query())
+         .build(|_, world, res1, queries| {
+            for mut vel in queries.iter(&mut *world) {
+               if res1.up {
+                  vel.0.y = vel.0.y - 0.1
+               };
+               if res1.down {
+                  vel.0.y = vel.0.y + 0.1
+               };
+               if res1.left {
+                  vel.0.x = vel.0.x - 0.1
+               };
+               if res1.right {
+                  vel.0.x = vel.0.x + 0.1
+               };
             }
-         })
+         }),
    );
 
    // Schedule
-   //
-   // Nie mogę dynamicznie zbudować bo jest move
    let mut schedule = Schedule::builder();
    for i in systems {
       schedule = schedule.add_system(i);
@@ -126,16 +141,18 @@ impl ggez::event::EventHandler for State {
       use ggez::graphics;
       let clr: graphics::Color = (0.0, 0.0, 0.0).into(); // czarny
       graphics::clear(ctx, clr); // Czyści ekran
+      let camerpos = *self.world.resources.get::<CamPos>().unwrap();
 
       let query = <(Read<Position>, Read<Sprite>)>::query();
-      for (p, img) in query.iter(&mut self.world) {
+      for (pos, img) in query.iter(&mut self.world) {
          let img = self.textures.get(&img.img).unwrap(); // Wyciąga teksturę z HashMap
-
+         let imgvec = cgmath::Vector2::<f32>::new(img.height().into(), img.width().into()) * 5.0; // *10/2
+         let p = cgmath::Point2::<f32>::from_vec(pos.0 - camerpos.0) - imgvec;
          graphics::draw(
             ctx,
             img,
             graphics::DrawParam::new()
-               .dest(cgmath::Point2::new(p.x, p.y))
+               .dest(p)
                .scale(cgmath::Vector2::new(10.0, 10.0)),
          )?;
       }
@@ -147,7 +164,7 @@ impl ggez::event::EventHandler for State {
 
    fn resize_event(&mut self, ctx: &mut ggez::Context, width: f32, height: f32) -> () {
       use ggez::graphics;
-      let coord = graphics::Rect::new(0.0, 0.0, width, height);
+      let coord = graphics::Rect::new(-width / 2.0, -height / 2.0, width, height);
       let _ = graphics::set_screen_coordinates(ctx, coord);
       ()
    }
@@ -169,7 +186,6 @@ impl ggez::event::EventHandler for State {
          KeyCode::D => playerinput.right = true,
          _ => (),
       }
-      
    }
 
    fn key_up_event(
@@ -179,7 +195,7 @@ impl ggez::event::EventHandler for State {
       _keymods: ggez::event::KeyMods,
    ) {
       use ggez::event::KeyCode;
-      let mut playerinput = &mut self.world.resources.get_mut::<PlayerInput>().unwrap();
+      let playerinput = &mut self.world.resources.get_mut::<PlayerInput>().unwrap();
 
       match keycode {
          KeyCode::W => playerinput.up = false,

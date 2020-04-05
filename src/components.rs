@@ -1,4 +1,5 @@
 //use specs::{Component, VecStorage};
+//use legion::prelude::*;
 
 // Resource
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -9,17 +10,19 @@ pub struct PlayerInput {
    pub right: bool,
 }
 
+// Resource
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Position {
-   pub x: f32,
-   pub y: f32,
-}
+pub struct CamPos(pub cgmath::Point2<f32>);
+
+// Tag
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Player;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Velocity {
-   pub x: f32,
-   pub y: f32,
-}
+pub struct Position(pub cgmath::Point2<f32>);
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Velocity (pub cgmath::Vector2<f32>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sprite {
