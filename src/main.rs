@@ -47,6 +47,18 @@ fn main() {
       )],
    );
 
+   // Byt dla testów 2!
+   world.insert(
+      (),
+      vec![(
+         Position((10.0, 10.0).into()),
+         Velocity((0.05, 0.1).into()),
+         Sprite {
+            img: "example".to_string(),
+         },
+      )],
+   );
+
    // -- Systemy --
    let mut systems = Vec::new();
    systems.push(
@@ -64,7 +76,8 @@ fn main() {
    systems.push(
       SystemBuilder::<()>::new("add_velocity_from_playerinput")
          .read_resource::<PlayerInput>()
-         .with_query(<Write<Velocity>>::query())
+         .with_query(<Write<Velocity>>::query()
+                     .filter(tag::<Player>()))
          .build(|_, world, res1, queries| {
             for mut vel in queries.iter(&mut *world) {
                if res1.up {
@@ -185,7 +198,6 @@ impl ggez::event::EventHandler for State {
    ) {
       use ggez::event::KeyCode;
       let mut playerinput = self.world.resources.get_mut::<PlayerInput>().unwrap();
-      e API docs for full documentation, or the examples directory for a number of commented examples of varying complexity. Most examples show off a single feature of ggez, while astroblasto and s
       match keycode {
          KeyCode::W => playerinput.up = true,
          KeyCode::S => playerinput.down = true,
