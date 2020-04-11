@@ -10,6 +10,9 @@ edition = "2018"
 ggez = "0.5.1"
 # specs = { version = "0.15.1", features = ["specs-derive"] }
 legion = "0.2.1"
+# Jeżeli będzie trzeba zaawansowanej fizyki
+# można wymienić na nphysics
+ncollide2d = "0.22"
 
 [dependencies.cgmath]
 version = "0.17.0"

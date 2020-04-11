@@ -13,7 +13,8 @@ use legion::prelude::*;
 // Potem będziemy to robić dynamicznie
 // na podstawie wielkości ekranu
 // i metadanych tekstury
-const GRAPHICS_SCALE: f32 = 10.0; 
+const GRAPHICS_SCALE: f32 = 10.0;
+const PLAYER_ACCEL: f32 = 0.3;
 
 fn main() {
    let playerinput = PlayerInput {
@@ -51,8 +52,8 @@ fn main() {
    world.insert(
       (),
       vec![(
-         Position((10.0, 10.0).into()),
-         Velocity((0.05, 0.1).into()),
+         Position((5.0, 5.0).into()),
+         Velocity((5.3, 5.6).into()),
          Sprite {
             img: "example".to_string(),
          },
@@ -81,17 +82,38 @@ fn main() {
          .build(|_, world, res1, queries| {
             for mut vel in queries.iter(&mut *world) {
                if res1.up {
-                  vel.0.y = vel.0.y - 0.1
+                  vel.0.y = vel.0.y - PLAYER_ACCEL;
                };
                if res1.down {
-                  vel.0.y = vel.0.y + 0.1
+                  vel.0.y = vel.0.y + PLAYER_ACCEL;
                };
                if res1.left {
-                  vel.0.x = vel.0.x - 0.1
+                  vel.0.x = vel.0.x - PLAYER_ACCEL;
                };
                if res1.right {
-                  vel.0.x = vel.0.x + 0.1
+                  vel.0.x = vel.0.x + PLAYER_ACCEL;
                };
+            }
+         }),
+   );
+
+   systems.push(
+      SystemBuilder::<()>::new("drag_force")
+         .with_query(<(Write<Velocity>)>::query())
+         .build(|_, world, _ /*resources*/, queries| {
+            for (mut vel) in queries.iter(&mut *world) {
+               vel.0.x = vel.0.x*0.96;
+               vel.0.y = vel.0.y*0.96;
+            }
+         }),
+   );
+
+   systems.push(
+      SystemBuilder::<()>::new("push")
+         .with_query(<(Read<Position>, Write<Velocity>)>::query())
+         .build(|_, world, _ /*resources*/, queries| {
+            for (mut pos, vel) in queries.iter(&mut *world) {
+               
             }
          }),
    );
@@ -167,13 +189,13 @@ impl ggez::event::EventHandler for State {
       for (pos, img) in query.iter(&mut self.world) {
          let img = self.textures.get(&img.img).unwrap(); // Wyciąga teksturę z HashMap
          let imgvec = cgmath::Vector2::<f32>::new(img.height().into(), img.width().into()) * (GRAPHICS_SCALE/2.); // środek obrazka
-         let p = cgmath::Point2::<f32>::from_vec(pos.0 - camerpos.0) - imgvec;
+         let p = nalgebra::Point2::<f32>::from_vec(pos.0 - camerpos.0) - imgvec;
          graphics::draw(
             ctx,
             img,
             graphics::DrawParam::new()
                .dest(p)
-               .scale(cgmath::Vector2::new(GRAPHICS_SCALE, GRAPHICS_SCALE)),
+               .scale(nalgebra::Vector2::new(GRAPHICS_SCALE, GRAPHICS_SCALE)),
          )?;
       }
 
